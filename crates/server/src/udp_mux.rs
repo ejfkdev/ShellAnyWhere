@@ -69,7 +69,10 @@ fn classify_packet(packet: &[u8]) -> PacketClass {
 // ── UdpMux ────────────────────────────────────────────────────────────────
 
 /// Type alias for WebRTC peer packet channel.
-type PktSender = mpsc::UnboundedSender<(SocketAddr, Vec<u8>)>;
+type PktSender = mpsc::UnboundedSender<KcpPacket>;
+
+/// KCP packet with source address.
+type KcpPacket = (SocketAddr, Vec<u8>);
 
 /// Unified UDP multiplexer: routes packets to WebRTC or KCP handlers.
 pub struct UdpMux {
@@ -80,9 +83,9 @@ pub struct UdpMux {
     // WebRTC routing: peer source addr → server ufrag
     webrtc_peer_map: std::sync::Mutex<HashMap<SocketAddr, String>>,
     // KCP routing: single channel for all KCP packets (fed to MuxTransport)
-    kcp_pkt_tx: mpsc::UnboundedSender<(SocketAddr, Vec<u8>)>,
+    kcp_pkt_tx: mpsc::UnboundedSender<KcpPacket>,
     // Holder for the KCP receiver (taken once by create_kcp_transport)
-    kcp_pkt_rx_holder: std::sync::Mutex<Option<mpsc::UnboundedReceiver<(SocketAddr, Vec<u8>)>>>,
+    kcp_pkt_rx_holder: std::sync::Mutex<Option<mpsc::UnboundedReceiver<KcpPacket>>>,
 }
 
 impl UdpMux {
@@ -231,7 +234,7 @@ impl UdpMux {
 pub struct MuxTransport {
     socket: Arc<tokio::net::UdpSocket>,
     local_addr: SocketAddr,
-    pkt_rx: tokio::sync::Mutex<mpsc::UnboundedReceiver<(SocketAddr, Vec<u8>)>>,
+    pkt_rx: tokio::sync::Mutex<mpsc::UnboundedReceiver<KcpPacket>>,
 }
 
 impl Transport for MuxTransport {
@@ -243,10 +246,13 @@ impl Transport for MuxTransport {
 
     async fn recv_from(&self, buf: &mut [u8]) -> std::io::Result<(usize, SocketAddr)> {
         // Read from the channel fed by UdpMux's dispatch loop
-        let (source, data) =
-            self.pkt_rx.lock().await.recv().await.ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::Other, "KCP channel closed")
-            })?;
+        let (source, data) = self
+            .pkt_rx
+            .lock()
+            .await
+            .recv()
+            .await
+            .ok_or_else(|| std::io::Error::other("KCP channel closed"))?;
 
         let len = data.len().min(buf.len());
         buf[..len].copy_from_slice(&data[..len]);
