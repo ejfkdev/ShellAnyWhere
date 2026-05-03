@@ -1,0 +1,41 @@
+[package]
+name = "saw-shell"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "ShellAnyWhere shell agent"
+
+[[bin]]
+name = "saw-shell"
+path = "src/main.rs"
+
+[features]
+default = ["kcp"]
+kcp = ["saw-core/kcp"]
+
+[dependencies]
+saw-core = { path = "../core", default-features = false, features = ["auth", "compress", "config", "terminal-filter", "kcp"] }
+mimalloc = { workspace = true }
+bytes = { workspace = true }
+bincode = { workspace = true }
+futures = { workspace = true }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "net", "time", "sync", "io-util", "signal"] }
+log = "0.4"
+env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
+anyhow = { workspace = true }
+dirs = { workspace = true }
+rand = { workspace = true }
+crossterm = { version = "0.29", default-features = false }
+lexopt = "0.3.2"
+vt100 = "^0.16"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+conpty = "0.7"
+
+[dev-dependencies]
+tempfile = { workspace = true }

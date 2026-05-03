@@ -1,0 +1,1134 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ── Font Faces ── */
+
+/* FiraCode: size-adjust 99.28% to snap advance width to 11px at font-size 18
+   (natural advance is 11.08px; 11.00/11.08 ≈ 99.28%). This makes 1ch = 11px
+   and 2ch = 22px, matching Ghostty's cell metrics. */
+@font-face {
+  font-family: "FiraCode Nerd Font Mono";
+  src: url("./assets/fonts/FiraCodeNerdFontMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 99.28%;
+  unicode-range:
+    U+0020-007E,
+    /* Basic Latin */ U+00A0-024F,
+    /* Latin Extended */ U+0300-036F,
+    /* Combining Diacritical */ U+2000-206F,
+    /* General Punctuation */ U+2070-209F,
+    /* Superscripts/Subscripts */ U+20A0-20CF,
+    /* Currency Symbols */ U+2100-214F,
+    /* Letterlike Symbols */ U+2190-21FF,
+    /* Arrows */ U+2200-22FF,
+    /* Math Operators */ U+2300-23FF,
+    /* Misc Technical */ U+2400-243F,
+    /* Control Pictures */ U+2460-24FF,
+    /* Enclosed Alphanumerics */ U+2500-257F,
+    /* Box Drawing */ U+2580-259F,
+    /* Block Elements */ U+25A0-25FF,
+    /* Geometric Shapes */ U+2600-26FF,
+    /* Misc Symbols */ U+2700-27BF,
+    /* Dingbats */ U+E000-F8FF,
+    /* Private Use (Nerd Font icons) */ U+F0000-F1AF0,
+    /* Supplementary PUA-A (Nerd Fonts v3) */ U+FB00-FB04,
+    /* Alphabetic Presentation */ U+FE00-FE0F,
+    /* Variation Selectors */ U+FEFF,
+    /* BOM/ZWNBSP */ U+1F100-1F1FF,
+    /* Enclosed Alphanumeric Supplement */ U+1F300-1F5FF,
+    /* Misc Symbols and Pictographs */ U+1F600-1F64F,
+    /* Emoticons */ U+1F680-1F6FF; /* Transport and Map Symbols */
+}
+
+@font-face {
+  font-family: "FiraCode Nerd Font Mono";
+  src: url("./assets/fonts/FiraCodeNerdFontMono-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 99.28%;
+  unicode-range:
+    U+0020-007E,
+    /* Basic Latin */ U+00A0-024F,
+    /* Latin Extended */ U+0300-036F,
+    /* Combining Diacritical */ U+2000-206F,
+    /* General Punctuation */ U+2070-209F,
+    /* Superscripts/Subscripts */ U+20A0-20CF,
+    /* Currency Symbols */ U+2100-214F,
+    /* Letterlike Symbols */ U+2190-21FF,
+    /* Arrows */ U+2200-22FF,
+    /* Math Operators */ U+2300-23FF,
+    /* Misc Technical */ U+2400-243F,
+    /* Control Pictures */ U+2460-24FF,
+    /* Enclosed Alphanumerics */ U+2500-257F,
+    /* Box Drawing */ U+2580-259F,
+    /* Block Elements */ U+25A0-25FF,
+    /* Geometric Shapes */ U+2600-26FF,
+    /* Misc Symbols */ U+2700-27BF,
+    /* Dingbats */ U+E000-F8FF,
+    /* Private Use (Nerd Font icons) */ U+F0000-F1AF0,
+    /* Supplementary PUA-A (Nerd Fonts v3) */ U+FB00-FB04,
+    /* Alphabetic Presentation */ U+FE00-FE0F,
+    /* Variation Selectors */ U+FEFF,
+    /* BOM/ZWNBSP */ U+1F100-1F1FF,
+    /* Enclosed Alphanumeric Supplement */ U+1F300-1F5FF,
+    /* Misc Symbols and Pictographs */ U+1F600-1F64F,
+    /* Emoticons */ U+1F680-1F6FF; /* Transport and Map Symbols */
+}
+
+/* LXGW WenKai Mono — Chinese glyphs only. No size-adjust:
+   wide chars are rendered at natural size in a 2ch span (term-wide). */
+@font-face {
+  font-family: "LXGW WenKai Mono";
+  src: url("./assets/fonts/LXGWWenKaiMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+4E00-9FFF,
+    /* CJK Unified Ideographs */ U+F900-FAFF,
+    /* CJK Compatibility Ideographs */ U+2E80-2FDF,
+    /* CJK Radicals */ U+3000-303F,
+    /* CJK Symbols/Punctuation */ U+FF01-FF60,
+    /* Fullwidth Forms */ U+FFE0-FFE6; /* Fullwidth Signs */
+}
+
+@font-face {
+  font-family: "Noto Sans Symbols 2";
+  src: url("./assets/fonts/NotoSansSymbols2-subset.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Symbols Nerd Font Mono — Supplementary PUA-A only (U+F0000–F1AF0).
+   Provides Nerd Fonts v3 icons that FiraCode Nerd Font Mono doesn't include
+   (e.g. 󱘗 U+F1617). FiraCode covers BMP PUA (U+E000–F8FF) but not the
+   supplementary plane. This font is loaded as a fallback for that range. */
+@font-face {
+  font-family: "FiraCode Nerd Font Mono";
+  src: url("./assets/fonts/SymbolsNerdFontMono-SuppPUA.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+F0000-F1AF0;
+}
+
+@font-face {
+  font-family: "FiraCode Nerd Font Mono";
+  src: url("./assets/fonts/SymbolsNerdFontMono-SuppPUA.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+F0000-F1AF0;
+}
+
+html,
+body {
+  width: 100%;
+  height: var(--app-height, 100%);
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #0d1117;
+  color: #e6edf3;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* On mobile: touch-action:none prevents scroll gestures. */
+@media (hover: none) and (pointer: coarse) {
+  body {
+    touch-action: none;
+  }
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Login Dialog ── */
+
+.login-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+}
+
+.login-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 32px;
+  width: 380px;
+  max-width: 90vw;
+}
+
+.login-card h1 {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.login-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-header h1 {
+  margin: 0;
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  color: #8b949e;
+  transition: color 0.15s;
+}
+
+.github-link:hover {
+  color: #e6edf3;
+}
+
+.subtitle {
+  color: #8b949e;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.login-card label {
+  display: block;
+  font-size: 13px;
+  color: #8b949e;
+  margin-bottom: 12px;
+}
+
+.login-card input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 12px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 16px;
+  outline: none;
+  touch-action: manipulation;
+}
+
+.login-card input:focus {
+  border-color: #58a6ff;
+}
+
+.error {
+  background: #3d1f1f;
+  border: 1px solid #f85149;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #f85149;
+  margin-bottom: 12px;
+}
+
+.connect-btn {
+  width: 100%;
+  padding: 10px;
+  background: #238636;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.connect-btn:hover {
+  background: #2ea043;
+}
+
+/* ── Main View ── */
+
+.app {
+  width: 100%;
+  height: var(--app-height, 100%);
+}
+
+.main-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Session Tabs ── */
+
+.session-tabs {
+  display: flex;
+  align-items: center;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0 4px;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.session-tabs-expanded {
+  height: auto;
+  flex-wrap: wrap;
+}
+
+/* Connection status dot */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Active tab: larger, solid dot */
+.tab-item.active .status-dot.connected {
+  width: 8px;
+  height: 8px;
+}
+
+.status-dot.connected {
+  background: #3fb950;
+  box-shadow: 0 0 4px #3fb95066;
+}
+
+/* Inactive tabs: hollow dot, dimmer */
+.tab-item:not(.active) .status-dot.connected {
+  background: transparent;
+  border: 1.5px solid #3fb95066;
+  box-shadow: none;
+}
+
+.status-dot.disconnected {
+  background: #f85149;
+  box-shadow: 0 0 4px #f8514966;
+  animation: pulse-red 1.5s ease-in-out infinite;
+}
+
+.tab-item:not(.active) .status-dot.disconnected {
+  background: transparent;
+  border: 1.5px solid #f8514966;
+  box-shadow: none;
+}
+
+/* Mobile menu: larger solid dot */
+.tab-menu-btn .status-dot {
+  width: 8px;
+  height: 8px;
+}
+
+@keyframes pulse-red {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Desktop tab list */
+.tab-list {
+  display: none;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 2px;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+}
+
+.tab-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Expanded: multi-row, no horizontal scroll, no mask */
+.tab-list-expanded {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  overflow-y: visible;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 10px;
+  padding-right: 24px; /* space for close button */
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px 6px 0 0;
+  color: #8b949e;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 1 1 0%;
+  max-width: 50%;
+  min-width: 120px;
+  overflow: hidden;
+  transition:
+    background 0.1s,
+    color 0.1s;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+}
+
+.tab-item:hover {
+  background: #21262d;
+  color: #e6edf3;
+}
+
+.tab-item.active {
+  background: #0d1117;
+  border-color: #30363d;
+  border-bottom-color: #0d1117;
+  color: #e6edf3;
+  box-shadow: inset 0 -2px 0 #3fb950;
+}
+
+.tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-close {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: #8b949e;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.tab-item:hover .tab-close {
+  opacity: 1;
+}
+
+.tab-close:hover {
+  background: #f8514933;
+  color: #f85149;
+}
+
+/* Tab drag & edit */
+.tab-item.tab-dragging {
+  opacity: 0.4;
+  /* Prevent vertical displacement during drag */
+  transform: none !important;
+}
+
+.tab-item.tab-drag-over {
+  border-left: 2px solid #58a6ff;
+  padding-left: 8px;
+}
+
+.tab-edit-input {
+  background: #0d1117;
+  border: 1px solid #58a6ff;
+  border-radius: 3px;
+  color: #e6edf3;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 1px 4px;
+  min-width: 60px;
+  width: 100%;
+  outline: none;
+  position: relative;
+  z-index: 10;
+}
+
+/* Expand/collapse button */
+.tab-expand {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  color: #8b949e;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    transform 0.2s,
+    color 0.1s;
+}
+
+.tab-expand:hover {
+  background: #30363d;
+  color: #e6edf3;
+}
+
+.tab-expand-active {
+  transform: rotate(180deg);
+}
+
+.tab-add {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px dashed #30363d;
+  border-radius: 6px;
+  color: #8b949e;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tab-add:hover {
+  background: #21262d;
+  color: #e6edf3;
+  border-color: #58a6ff;
+}
+
+/* Mobile menu button */
+.tab-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 13px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-menu-btn:hover {
+  background: #21262d;
+}
+
+.tab-menu-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+/* Mobile editing mode: replace menu button with input */
+.tab-menu-editing {
+  cursor: default;
+}
+
+.tab-menu-edit-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+/* Zoom controls */
+.tab-zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.zoom-btn {
+  width: 26px;
+  height: 26px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  color: #e6edf3;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-btn:hover {
+  background: #30363d;
+}
+
+.zoom-label {
+  font-size: 11px;
+  color: #8b949e;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Desktop: show tab list, hide mobile menu ── */
+@media (min-width: 769px) {
+  .tab-list {
+    display: flex;
+  }
+  .tab-add {
+    display: flex;
+  }
+  .tab-expand {
+    display: flex;
+  }
+  .tab-menu-btn {
+    display: none;
+  }
+}
+
+/* ── Session Picker ── */
+
+.picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 769px) {
+  .picker-overlay {
+    align-items: center;
+  }
+}
+
+.picker-panel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px 12px 0 0;
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+@media (min-width: 769px) {
+  .picker-panel {
+    border-radius: 12px;
+  }
+}
+
+.picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.picker-header h3 {
+  font-size: 16px;
+}
+
+.picker-close {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.picker-close:hover {
+  color: #e6edf3;
+}
+
+.picker-section {
+  margin-bottom: 16px;
+}
+
+.picker-section:last-child {
+  margin-bottom: 0;
+}
+
+.picker-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.picker-list {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  touch-action: pan-y;
+}
+
+.picker-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.picker-card {
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.picker-card:hover {
+  border-color: #58a6ff;
+  background: #262c36;
+}
+
+.picker-card:active {
+  background: #2a3040;
+}
+
+.picker-card.picker-active {
+  border-color: #58a6ff;
+  background: #1c2533;
+}
+
+.picker-card.picker-available {
+  border-style: dashed;
+}
+
+.picker-card-id {
+  font-weight: 600;
+  font-size: 14px;
+  word-break: break-all;
+  flex: 1;
+}
+
+.picker-card-meta {
+  font-size: 13px;
+  color: #8b949e;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-card-detail {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.picker-card-detail span {
+  font-size: 12px;
+  color: #6e7681;
+}
+
+.picker-detach-btn {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  color: #8b949e;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.picker-detach-btn:hover {
+  background: #f8514922;
+  color: #f85149;
+  border-color: #f85149;
+}
+
+.picker-empty {
+  color: #8b949e;
+  font-size: 13px;
+  padding: 12px;
+  text-align: center;
+}
+
+.picker-loading {
+  font-size: 11px;
+  color: #58a6ff;
+  margin-top: 4px;
+}
+
+/* ── Terminal Area ── */
+
+.terminal-area-wrapper {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding-left: 12px;
+  padding-bottom: 12px;
+  padding-top: 4px;
+  overflow: hidden;
+}
+
+.terminal-area {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Terminal View ── */
+
+.terminal-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.terminal-view.terminal-active {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.terminal-view.terminal-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* On mobile, disable browser touch gestures on terminal area so our JS handler works */
+@media (hover: none) and (pointer: coarse) {
+  .terminal-view {
+    touch-action: none;
+  }
+}
+
+.terminal-container {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  touch-action: none;
+}
+
+.terminal-container .wterm {
+  height: stretch;
+  --term-font-family:
+    "FiraCode Nerd Font Mono", "LXGW WenKai Mono",
+    "Noto Sans Mono CJK JP", "Noto Sans Symbols 2",
+    "TermFallback", monospace;
+  font-family: var(--term-font-family);
+  font-size: var(--term-font-size, 14px);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Prevent width jitter from font fallback / kerning for CJK and
+   halfwidth Katakana characters (e.g. unimatrix output). */
+
+/* Noto Sans Mono CJK JP — Japanese wide glyphs only.
+   ASCII/Latin handled by FiraCode. No size-adjust: wide chars are
+   rendered at natural size in a 2ch span (term-wide). */
+@font-face {
+  font-family: "Noto Sans Mono CJK JP";
+  src: url("./assets/fonts/NotoSansMonoCJKjp-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+3000-303F,
+    /* CJK Symbols/Punctuation */ U+3040-309F,
+    /* Hiragana */ U+30A0-30FF,
+    /* Katakana */ U+FF01-FF60,
+    /* Fullwidth Forms */ U+FFE0-FFE6; /* Fullwidth Signs */
+}
+
+@font-face {
+  font-family: "Noto Sans Mono CJK JP";
+  src: url("./assets/fonts/NotoSansMonoCJKjp-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+3000-303F,
+    /* CJK Symbols/Punctuation */ U+3040-309F,
+    /* Hiragana */ U+30A0-30FF,
+    /* Katakana */ U+FF01-FF60,
+    /* Fullwidth Forms */ U+FFE0-FFE6; /* Fullwidth Signs */
+}
+
+/* Noto Sans Mono CJK JP — Halfwidth Katakana (U+FF61-FF9F).
+   Noto's half-width advance is 9px at font-size 18 (em=1000, advance=500).
+   FiraCode's 1ch is 11px after size-adjust. We need size-adjust to make
+   Noto half-width match 1ch: 11/9 × 100 ≈ 122.22%. This scales glyphs
+   slightly larger but ensures correct cell alignment in the terminal. */
+@font-face {
+  font-family: "Noto Sans Mono CJK JP";
+  src: url("./assets/fonts/NotoSansMonoCJKjp-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 122.22%;
+  unicode-range: U+FF61-FF9F; /* Halfwidth Katakana */
+}
+
+@font-face {
+  font-family: "Noto Sans Mono CJK JP";
+  src: url("./assets/fonts/NotoSansMonoCJKjp-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 122.22%;
+  unicode-range: U+FF61-FF9F; /* Halfwidth Katakana */
+}
+
+.terminal-container .wterm .term-row {
+  text-rendering: optimizeSpeed;
+  letter-spacing: 0;
+}
+
+/* Wide (CJK) characters: natural glyph size, padded to 2 cells.
+   The font's fullwidth advance is less than 2ch (FiraCode-based),
+   so we force the span to exactly 2ch and center the glyph. */
+.term-wide {
+  width: 2ch;
+  text-align: center;
+}
+
+/* ── Welcome Screen ── */
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #8b949e;
+  text-align: center;
+  padding: 24px;
+}
+
+.welcome-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.welcome h2 {
+  font-size: 20px;
+  color: #e6edf3;
+  margin-bottom: 8px;
+}
+
+.welcome p {
+  font-size: 14px;
+}
+
+/* ── Global Error ── */
+
+.global-error {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #3d1f1f;
+  border: 1px solid #f85149;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #f85149;
+  z-index: 200;
+  animation: fadeIn 0.2s ease;
+  max-width: 90vw;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ── Virtual Keyboard (mobile only) ── */
+
+.virtual-keyboard {
+  display: none;
+  flex-shrink: 0;
+  background: #161b22;
+  border-top: 1px solid #30363d;
+  padding: 4px 3px;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.virtual-keyboard .vk-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.virtual-keyboard .vk-row:last-child {
+  margin-bottom: 0;
+}
+
+.virtual-keyboard .vk-key {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  color: #8b949e;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Must be 'none', NOT 'manipulation' — manipulation allows panning which
+     overrides body's touch-action:none and lets the user scroll the page
+     by dragging from a keyboard button. Keyboard buttons only need taps,
+     which still work with touch-action:none via pointer events. */
+  touch-action: none;
+  letter-spacing: 0.02em;
+}
+
+.virtual-keyboard .vk-key:active {
+  background: #30363d;
+  color: #c9d1d9;
+}
+
+.virtual-keyboard .vk-key.active {
+  background: #58a6ff;
+  color: #fff;
+  border-color: #58a6ff;
+}
+
+/* Keyboard toggle button */
+.virtual-keyboard .vk-key.vk-toggle {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Extra rows (toggled by keyboard emoji) */
+.virtual-keyboard .vk-extra-row {
+  overflow: hidden;
+  animation: vk-slide-in 0.15s ease-out;
+}
+
+@keyframes vk-slide-in {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 40px;
+    opacity: 1;
+  }
+}
+
+/* Show virtual keyboard on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .virtual-keyboard {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Small phones */
+@media (max-width: 374px) {
+  .virtual-keyboard .vk-key {
+    height: 34px;
+    font-size: 10px;
+  }
+}
+
+/* Tablet / wide phone: single row layout */
+@media (hover: none) and (pointer: coarse) and (min-width: 600px) {
+  .virtual-keyboard {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+  .virtual-keyboard .vk-row {
+    flex: 1;
+    flex-wrap: nowrap;
+    margin-bottom: 0;
+  }
+  .virtual-keyboard .vk-key {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    font-size: 10px;
+  }
+}
+
+/* Landscape on phone */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) and (max-width: 900px) {
+  .virtual-keyboard .vk-key {
+    height: 26px;
+    font-size: 10px;
+  }
+  .virtual-keyboard {
+    padding: 2px 3px;
+  }
+  .virtual-keyboard .vk-row {
+    gap: 3px;
+    margin-bottom: 3px;
+  }
+}
+
+/* Bottom spacing: 16px on regular devices, or safe-area on notched devices */
+/* With position:fixed, safe-area-inset-bottom works correctly */
+.virtual-keyboard {
+  padding-bottom: 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .virtual-keyboard {
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+
+  .session-tabs {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

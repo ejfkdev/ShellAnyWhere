@@ -1,0 +1,424 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    if: "!startsWith(github.ref, 'refs/tags/v')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build web frontend
+        run: cd web && npm ci && npm run build
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+  test:
+    if: "!startsWith(github.ref, 'refs/tags/v')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build web frontend
+        run: cd web && npm ci && npm run build
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Run tests
+        run: cargo test
+
+  build:
+    needs: [lint, test]
+    if: always() && startsWith(github.ref, 'refs/tags/v') && (needs.lint.result == 'success' || needs.lint.result == 'skipped') && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux x86_64 (glibc)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            ext: ''
+            upx: true
+            cross: false
+          # Linux x86_64 (musl, static)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            ext: ''
+            upx: true
+            cross: false
+          # Linux ARM64 (glibc)
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            ext: ''
+            upx: true
+            cross: true
+          # Linux ARM64 (musl, static)
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            ext: ''
+            upx: true
+            cross: true
+          # Linux ARMv7 (Raspberry Pi 2/3, 32-bit)
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            ext: ''
+            upx: true
+            cross: true
+          # Linux LoongArch64 (龙芯)
+          - os: ubuntu-latest
+            target: loongarch64-unknown-linux-gnu
+            ext: ''
+            upx: false
+            cross: true
+          # Linux RISC-V 64 (glibc)
+          - os: ubuntu-latest
+            target: riscv64gc-unknown-linux-gnu
+            ext: ''
+            upx: true
+            cross: true
+          # Linux RISC-V 64 (musl static)
+          - os: ubuntu-latest
+            target: riscv64gc-unknown-linux-musl
+            ext: ''
+            upx: true
+            cross: true
+          # Linux PowerPC64 LE (glibc, IBM POWER)
+          - os: ubuntu-latest
+            target: powerpc64le-unknown-linux-gnu
+            ext: ''
+            upx: true
+            cross: true
+          # Linux s390x (IBM Z)
+          - os: ubuntu-latest
+            target: s390x-unknown-linux-gnu
+            ext: ''
+            upx: false
+            cross: true
+          # Linux ARMv6 (初代树莓派)
+          - os: ubuntu-latest
+            target: arm-unknown-linux-gnueabihf
+            ext: ''
+            upx: true
+            cross: true
+          # Linux PowerPC64 BE
+          - os: ubuntu-latest
+            target: powerpc64-unknown-linux-gnu
+            ext: ''
+            upx: false
+            cross: true
+          # Linux SPARC64
+          - os: ubuntu-latest
+            target: sparc64-unknown-linux-gnu
+            ext: ''
+            upx: false
+            cross: true
+          # FreeBSD x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-freebsd
+            ext: ''
+            upx: true
+            cross: true
+          # Windows x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            ext: .exe
+            upx: true
+            cross: false
+          # Windows ARM64
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            ext: .exe
+            upx: true
+            cross: false
+          # macOS ARM64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            ext: ''
+            upx: false
+            cross: false
+          # macOS Intel (cross-compile on ARM64 runner)
+          - os: macos-14
+            target: x86_64-apple-darwin
+            ext: ''
+            upx: false
+            cross: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build web frontend
+        run: cd web && npm ci && npm run build
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools
+        if: matrix.cross
+        shell: bash
+        run: |
+          sudo apt-get update
+          case "${{ matrix.target }}" in
+            aarch64-unknown-linux-gnu)
+              sudo apt-get install -y gcc-aarch64-linux-gnu
+              echo 'CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc' >> "$GITHUB_ENV"
+              ;;
+            aarch64-unknown-linux-musl)
+              sudo mkdir -p /opt/x-tools
+              curl -L https://github.com/cross-tools/musl-cross/releases/download/20260430/aarch64-unknown-linux-musl.tar.xz | sudo tar xJ -C /opt/x-tools
+              echo '/opt/x-tools/aarch64-unknown-linux-musl/bin' >> "$GITHUB_PATH"
+              echo 'CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-unknown-linux-musl-gcc' >> "$GITHUB_ENV"
+              ;;
+            armv7-unknown-linux-gnueabihf)
+              sudo apt-get install -y gcc-arm-linux-gnueabihf
+              echo 'CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc' >> "$GITHUB_ENV"
+              ;;
+            loongarch64-unknown-linux-gnu)
+              sudo mkdir -p /opt/x-tools
+              curl -L https://github.com/loong64/cross-tools/releases/download/20260430/x86_64-cross-tools-loongarch64-unknown-linux-gnu-stable.tar.xz | sudo tar xJ -C /opt/x-tools
+              echo '/opt/x-tools/loongarch64-unknown-linux-gnu/bin' >> "$GITHUB_PATH"
+              echo 'CARGO_TARGET_LOONGARCH64_UNKNOWN_LINUX_GNU_LINKER=loongarch64-unknown-linux-gnu-gcc' >> "$GITHUB_ENV"
+              ;;
+            riscv64gc-unknown-linux-gnu)
+              sudo apt-get install -y gcc-riscv64-linux-gnu
+              echo 'CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_LINKER=riscv64-linux-gnu-gcc' >> "$GITHUB_ENV"
+              ;;
+            riscv64gc-unknown-linux-musl)
+              sudo mkdir -p /opt/x-tools
+              curl -L https://github.com/cross-tools/musl-cross/releases/download/20260430/riscv64-unknown-linux-musl.tar.xz | sudo tar xJ -C /opt/x-tools
+              echo '/opt/x-tools/riscv64-unknown-linux-musl/bin' >> "$GITHUB_PATH"
+              echo 'CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER=riscv64-unknown-linux-musl-gcc' >> "$GITHUB_ENV"
+              ;;
+            powerpc64le-unknown-linux-gnu)
+              sudo apt-get install -y gcc-powerpc64le-linux-gnu
+              echo 'CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_GNU_LINKER=powerpc64le-linux-gnu-gcc' >> "$GITHUB_ENV"
+              ;;
+            s390x-unknown-linux-gnu)
+              sudo apt-get install -y gcc-s390x-linux-gnu
+              echo 'CARGO_TARGET_S390X_UNKNOWN_LINUX_GNU_LINKER=s390x-linux-gnu-gcc' >> "$GITHUB_ENV"
+              ;;
+            arm-unknown-linux-gnueabihf)
+              sudo apt-get install -y gcc-arm-linux-gnueabihf
+              echo 'CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc' >> "$GITHUB_ENV"
+              ;;
+            powerpc64-unknown-linux-gnu)
+              sudo apt-get install -y gcc-powerpc64-linux-gnu
+              echo 'CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_GNU_LINKER=powerpc64-linux-gnu-gcc' >> "$GITHUB_ENV"
+              ;;
+            sparc64-unknown-linux-gnu)
+              sudo apt-get install -y gcc-sparc64-linux-gnu
+              echo 'CARGO_TARGET_SPARC64_UNKNOWN_LINUX_GNU_LINKER=sparc64-linux-gnu-gcc' >> "$GITHUB_ENV"
+              ;;
+            x86_64-unknown-freebsd)
+              pip install cargo-zigbuild
+              ;;
+          esac
+
+      - name: Install musl tools (x86_64)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+          cache-on-failure: true
+
+      - name: Set version from tag
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          awk -v v="$VERSION" '
+          /^\[workspace\.package\]/ { in_wp=1 }
+          in_wp && /^version = "/ { sub(/^version = ".*"/, "version = \"" v "\""); in_wp=0 }
+          { print }
+          ' Cargo.toml > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+
+      - name: Build
+        shell: bash
+        run: |
+          case "${{ matrix.target }}" in
+            x86_64-unknown-freebsd)
+              cargo zigbuild --release --target ${{ matrix.target }}
+              ;;
+            *)
+              cargo build --release --target ${{ matrix.target }}
+              ;;
+          esac
+
+      - name: Install UPX
+        if: matrix.upx
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            curl -L https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar xJ
+            echo "$PWD/upx-4.2.4-amd64_linux" >> $GITHUB_PATH
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            curl -L https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-win64.zip -o upx.zip
+            unzip upx.zip
+            echo "$PWD/upx-4.2.4-win64" >> $GITHUB_PATH
+          fi
+
+      - name: Compress with UPX
+        if: matrix.upx
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          for bin in saw-server saw-shell saw-client; do
+            if [ -f "${bin}${{ matrix.ext }}" ]; then
+              upx --best "${bin}${{ matrix.ext }}" || true
+            fi
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: saw-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/saw-server${{ matrix.ext }}
+            target/${{ matrix.target }}/release/saw-shell${{ matrix.ext }}
+            target/${{ matrix.target }}/release/saw-client${{ matrix.ext }}
+
+  release:
+    needs: build
+    if: always() && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: false
+
+      - name: Prepare release assets
+        run: |
+          mkdir release
+          # Helper: copy if exists (skip failed builds)
+          cpc() { [ -f "$1" ] && cp "$1" "$2" && echo "  + $2" || echo "  SKIP $2 (artifact missing)"; }
+          # Linux x86_64 (glibc)
+          cpc artifacts/saw-x86_64-unknown-linux-gnu/saw-server release/saw-server-linux-x86_64
+          cpc artifacts/saw-x86_64-unknown-linux-gnu/saw-shell release/saw-shell-linux-x86_64
+          cpc artifacts/saw-x86_64-unknown-linux-gnu/saw-client release/saw-client-linux-x86_64
+          # Linux x86_64 (musl/static)
+          cpc artifacts/saw-x86_64-unknown-linux-musl/saw-server release/saw-server-linux-x86_64-musl
+          cpc artifacts/saw-x86_64-unknown-linux-musl/saw-shell release/saw-shell-linux-x86_64-musl
+          cpc artifacts/saw-x86_64-unknown-linux-musl/saw-client release/saw-client-linux-x86_64-musl
+          # Linux ARM64 (glibc)
+          cpc artifacts/saw-aarch64-unknown-linux-gnu/saw-server release/saw-server-linux-arm64
+          cpc artifacts/saw-aarch64-unknown-linux-gnu/saw-shell release/saw-shell-linux-arm64
+          cpc artifacts/saw-aarch64-unknown-linux-gnu/saw-client release/saw-client-linux-arm64
+          # Linux ARM64 (musl/static)
+          cpc artifacts/saw-aarch64-unknown-linux-musl/saw-server release/saw-server-linux-arm64-musl
+          cpc artifacts/saw-aarch64-unknown-linux-musl/saw-shell release/saw-shell-linux-arm64-musl
+          cpc artifacts/saw-aarch64-unknown-linux-musl/saw-client release/saw-client-linux-arm64-musl
+          # Linux ARMv7 (Raspberry Pi)
+          cpc artifacts/saw-armv7-unknown-linux-gnueabihf/saw-server release/saw-server-linux-armv7
+          cpc artifacts/saw-armv7-unknown-linux-gnueabihf/saw-shell release/saw-shell-linux-armv7
+          cpc artifacts/saw-armv7-unknown-linux-gnueabihf/saw-client release/saw-client-linux-armv7
+          # Linux LoongArch64 (龙芯)
+          cpc artifacts/saw-loongarch64-unknown-linux-gnu/saw-server release/saw-server-linux-loongarch64
+          cpc artifacts/saw-loongarch64-unknown-linux-gnu/saw-shell release/saw-shell-linux-loongarch64
+          cpc artifacts/saw-loongarch64-unknown-linux-gnu/saw-client release/saw-client-linux-loongarch64
+          # Linux RISC-V 64 (glibc)
+          cpc artifacts/saw-riscv64gc-unknown-linux-gnu/saw-server release/saw-server-linux-riscv64
+          cpc artifacts/saw-riscv64gc-unknown-linux-gnu/saw-shell release/saw-shell-linux-riscv64
+          cpc artifacts/saw-riscv64gc-unknown-linux-gnu/saw-client release/saw-client-linux-riscv64
+          # Linux RISC-V 64 (musl static)
+          cpc artifacts/saw-riscv64gc-unknown-linux-musl/saw-server release/saw-server-linux-riscv64-musl
+          cpc artifacts/saw-riscv64gc-unknown-linux-musl/saw-shell release/saw-shell-linux-riscv64-musl
+          cpc artifacts/saw-riscv64gc-unknown-linux-musl/saw-client release/saw-client-linux-riscv64-musl
+          # Linux PowerPC64 LE (IBM POWER)
+          cpc artifacts/saw-powerpc64le-unknown-linux-gnu/saw-server release/saw-server-linux-powerpc64le
+          cpc artifacts/saw-powerpc64le-unknown-linux-gnu/saw-shell release/saw-shell-linux-powerpc64le
+          cpc artifacts/saw-powerpc64le-unknown-linux-gnu/saw-client release/saw-client-linux-powerpc64le
+          # Linux s390x (IBM Z)
+          cpc artifacts/saw-s390x-unknown-linux-gnu/saw-server release/saw-server-linux-s390x
+          cpc artifacts/saw-s390x-unknown-linux-gnu/saw-shell release/saw-shell-linux-s390x
+          cpc artifacts/saw-s390x-unknown-linux-gnu/saw-client release/saw-client-linux-s390x
+          # Linux ARMv6 (初代树莓派)
+          cpc artifacts/saw-arm-unknown-linux-gnueabihf/saw-server release/saw-server-linux-armv6
+          cpc artifacts/saw-arm-unknown-linux-gnueabihf/saw-shell release/saw-shell-linux-armv6
+          cpc artifacts/saw-arm-unknown-linux-gnueabihf/saw-client release/saw-client-linux-armv6
+          # Linux PowerPC64 BE
+          cpc artifacts/saw-powerpc64-unknown-linux-gnu/saw-server release/saw-server-linux-powerpc64
+          cpc artifacts/saw-powerpc64-unknown-linux-gnu/saw-shell release/saw-shell-linux-powerpc64
+          cpc artifacts/saw-powerpc64-unknown-linux-gnu/saw-client release/saw-client-linux-powerpc64
+          # Linux SPARC64
+          cpc artifacts/saw-sparc64-unknown-linux-gnu/saw-server release/saw-server-linux-sparc64
+          cpc artifacts/saw-sparc64-unknown-linux-gnu/saw-shell release/saw-shell-linux-sparc64
+          cpc artifacts/saw-sparc64-unknown-linux-gnu/saw-client release/saw-client-linux-sparc64
+          # FreeBSD x86_64
+          cpc artifacts/saw-x86_64-unknown-freebsd/saw-server release/saw-server-freebsd-x86_64
+          cpc artifacts/saw-x86_64-unknown-freebsd/saw-shell release/saw-shell-freebsd-x86_64
+          cpc artifacts/saw-x86_64-unknown-freebsd/saw-client release/saw-client-freebsd-x86_64
+          # Windows x86_64
+          cpc artifacts/saw-x86_64-pc-windows-msvc/saw-server.exe release/saw-server-windows-x86_64.exe
+          cpc artifacts/saw-x86_64-pc-windows-msvc/saw-shell.exe release/saw-shell-windows-x86_64.exe
+          cpc artifacts/saw-x86_64-pc-windows-msvc/saw-client.exe release/saw-client-windows-x86_64.exe
+          # Windows ARM64
+          cpc artifacts/saw-aarch64-pc-windows-msvc/saw-server.exe release/saw-server-windows-arm64.exe
+          cpc artifacts/saw-aarch64-pc-windows-msvc/saw-shell.exe release/saw-shell-windows-arm64.exe
+          cpc artifacts/saw-aarch64-pc-windows-msvc/saw-client.exe release/saw-client-windows-arm64.exe
+          # macOS ARM64
+          cpc artifacts/saw-aarch64-apple-darwin/saw-server release/saw-server-macos-arm64
+          cpc artifacts/saw-aarch64-apple-darwin/saw-shell release/saw-shell-macos-arm64
+          cpc artifacts/saw-aarch64-apple-darwin/saw-client release/saw-client-macos-arm64
+          # macOS Intel
+          cpc artifacts/saw-x86_64-apple-darwin/saw-server release/saw-server-macos-x86_64
+          cpc artifacts/saw-x86_64-apple-darwin/saw-shell release/saw-shell-macos-x86_64
+          cpc artifacts/saw-x86_64-apple-darwin/saw-client release/saw-client-macos-x86_64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true

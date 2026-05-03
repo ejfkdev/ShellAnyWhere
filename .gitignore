@@ -1,0 +1,13 @@
+/target
+**/*.rs.bk
+# Cargo.lock is committed for reproducible binary builds
+*.swp
+*.swo
+*~
+.DS_Store
+.env
+crates/server/web-compressed/
+node_modules/
+dist/
+test-results/
+tsconfig.tsbuildinfo

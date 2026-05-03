@@ -1,0 +1,62 @@
+[package]
+name = "saw-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "ShellAnyWhere server"
+
+[[bin]]
+name = "saw-server"
+path = "src/main.rs"
+
+[features]
+default = ["kcp"]
+kcp = ["saw-core/kcp"]
+
+[dependencies]
+saw-core = { path = "../core", features = ["server", "native-certs", "compress"] }
+mimalloc = { workspace = true }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "net", "time", "sync", "io-util", "signal"] }
+log = "0.4"
+env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
+anyhow = { workspace = true }
+bytes = { workspace = true }
+clap = { workspace = true }
+base64 = { workspace = true }
+async-trait = { workspace = true }
+dirs = { workspace = true }
+futures = { workspace = true }
+serde_json = { workspace = true }
+rand_core = "0.10"
+getrandom = "0.3"
+
+# Server-only
+russh = "0.60.2"
+rust-embed = "8"
+hyper = { version = "1", features = ["server", "http1", "http2"] }
+hyper-util = { version = "0.1", features = ["tokio", "server-auto"] }
+http-body-util = "0.1"
+http = { workspace = true }
+mime_guess = "2"
+tokio-tungstenite = "0.28"
+sha1 = "0.10"
+nanoid = "0.5.0"
+dashmap = "6.1.0"
+bincode = { workspace = true }
+subtle = { workspace = true }
+
+# WebRTC
+str0m = { version = "0.18", default-features = false, features = ["rust-crypto"] }
+str0m-rust-crypto = "0.3"
+
+# Windows Service
+[target.'cfg(windows)'.dependencies]
+windows-service = { workspace = true }
+
+[build-dependencies]
+flate2 = "1"
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -1,0 +1,203 @@
+# ShellAnyWhere Configuration File
+#
+# 优先级: CLI 参数 > SAW_ 环境变量 > 配置文件 > 默认值
+# Priority: CLI args > SAW_ env vars > config file > defaults
+#
+# 路径约定 / Path conventions:
+#
+#   配置 & 数据 Config & Data:
+#     Linux/macOS: ~/.config/ShellAnyWhere/
+#     Windows:     %APPDATA%\ShellAnyWhere\
+#
+#   日志 Logs:
+#     Linux/macOS: ~/.config/ShellAnyWhere/logs/server.log
+#     Windows:     %LOCALAPPDATA%\ShellAnyWhere\server.log
+
+[server]
+
+# 监听地址
+# Listen address (host:port)
+# Env: SAW_LISTEN
+# listen = "0.0.0.0:18708"
+
+# 认证 token
+# Authentication token. Empty = auto-generate and save to config dir
+# Env: SAW_TOKEN
+# token = ""
+
+# SSH authorized_keys 文件路径
+# SSH authorized_keys file path. Empty = config dir/authorized_keys
+# Env: SAW_SSH_AUTHORIZED_KEYS
+# ssh_authorized_keys = ""
+
+# SSH 空闲连接超时（秒）
+# SSH idle connection timeout in seconds. Default: 3600 (1 hour)
+# Env: SAW_SSH_IDLE_TIMEOUT
+# ssh_idle_timeout_secs = 3600
+
+# 启用 SSH 协议
+# Enable SSH protocol. Default: true
+# Env: SAW_SSH_ENABLED
+# ssh_enabled = true
+
+# 启用 SSH 密码认证
+# Enable SSH password auth. Requires plaintext token in memory.
+# When disabled, only public key auth is available. Default: false
+# Env: SAW_SSH_PASSWORD_AUTH
+# ssh_password_auth = false
+
+[agent]
+
+# Server 地址
+# Server address to connect to. Default: "127.0.0.1:18708"
+# Env: SAW_SERVER
+# server = ""
+
+# 认证 token（需与 server 一致）
+# Authentication token (must match server). Empty = load from token file
+# Env: SAW_TOKEN
+# token = ""
+
+# Shell 程序路径
+# Shell program path. Empty = auto-detect
+# Env: SAW_SHELL_PATH  |  CLI: --shell
+# shell = ""
+
+# 终端焦点追踪
+# Update session activity when terminal tab/window gains focus. Default: true
+# Env: SAW_FOCUS_TRACKING
+# focus_tracking = true
+
+# 转发本地 SSH 公钥到 server
+# Forward local SSH public keys to server. Default: true
+# Env: SAW_NO_SSH_KEY_FORWARD=1  |  CLI: --no-ssh-key-forward
+# ssh_key_forward = true
+
+# 终端输出刷新间隔（毫秒）
+# TerminalIO output flush interval in ms. Only effective with compress or diff. Default: 100
+# CLI: --flush-interval
+# flush_interval_ms = 100
+
+# 启用 lz4 输出压缩
+# Enable lz4 output compression, sends in flush_interval batches. Default: false
+# Env: SAW_IO_COMPRESS=1  |  CLI: --io-compress
+# io_compress = false
+
+# 启用全屏程序差异优化
+# Enable diff optimization for fullscreen programs (vim/htop). Default: false
+# Env: SAW_IO_DIFF=1  |  CLI: --io-diff
+# io_diff = false
+
+# 连接失败时自动启动本地 server
+# Auto-start local server on connection failure (localhost only). Default: false
+# auto_server = false
+
+# 快速重连阶段：随机间隔范围（秒）
+# Fast reconnect interval range in seconds. Default: 1-2
+# Env: SAW_RECONNECT_FAST_MIN_SECS / SAW_RECONNECT_FAST_MAX_SECS
+# reconnect_fast_min_secs = 1
+# reconnect_fast_max_secs = 2
+
+# 快速重连尝试次数
+# Fast reconnect attempt count. Default: 100
+# Env: SAW_RECONNECT_FAST_ATTEMPTS
+# reconnect_fast_attempts = 100
+
+# 慢速重连阶段：随机间隔范围（秒）
+# Slow reconnect interval range in seconds. Default: 60-120
+# Env: SAW_RECONNECT_SLOW_MIN_SECS / SAW_RECONNECT_SLOW_MAX_SECS
+# reconnect_slow_min_secs = 60
+# reconnect_slow_max_secs = 120
+
+[client]
+
+# Server 地址
+# Server address. Default: "127.0.0.1:18708"
+# Env: SAW_SERVER
+# server = ""
+
+# 认证 token（需与 server 一致）
+# Authentication token (must match server). Empty = load from token file
+# Env: SAW_TOKEN
+# token = ""
+
+# 终端焦点追踪
+# Mark as active client when terminal gains focus. Default: true
+# Env: SAW_FOCUS_TRACKING
+# focus_tracking = true
+
+# 快速重连阶段：随机间隔范围（秒）
+# Fast reconnect interval range in seconds. Default: 1-2
+# Env: SAW_RECONNECT_FAST_MIN_SECS / SAW_RECONNECT_FAST_MAX_SECS
+# reconnect_fast_min_secs = 1
+# reconnect_fast_max_secs = 2
+
+# 快速重连尝试次数
+# Fast reconnect attempt count. Default: 100
+# Env: SAW_RECONNECT_FAST_ATTEMPTS
+# reconnect_fast_attempts = 100
+
+# 慢速重连阶段：随机间隔范围（秒）
+# Slow reconnect interval range in seconds. Default: 60-120
+# Env: SAW_RECONNECT_SLOW_MIN_SECS / SAW_RECONNECT_SLOW_MAX_SECS
+# reconnect_slow_min_secs = 60
+# reconnect_slow_max_secs = 120
+
+[paths]
+
+# 数据目录
+# Data directory. Empty = config directory
+# Env: SAW_DATA_DIR
+# data_dir = ""
+
+# Server 日志文件路径
+# Server log file path. Empty = config dir/logs/server.log
+# log_file = ""
+
+# Token 文件路径
+# Token file path. Empty = config dir/token
+# token_file = ""
+
+# SSH host key 文件路径
+# SSH host key file path. Empty = config dir/ssh_host_key
+# ssh_host_key = ""
+
+# TLS 证书文件路径（HTTPS/WSS）
+# TLS certificate file path. Empty = auto-generate self-signed cert
+# Default: config dir/server.crt
+# Env: SAW_CERT_FILE
+# cert_file = ""
+
+# TLS 私钥文件路径（HTTPS/WSS）
+# TLS private key file path. Empty = auto-generate
+# Default: config dir/server.key
+# Env: SAW_KEY_FILE
+# key_file = ""
+
+[protocol]
+
+# SessionUpdate 发送间隔（秒）
+# SessionUpdate send interval in seconds. Default: 5
+# session_update_interval_secs = 5
+
+# 协议检测 peek 超时（秒）
+# Protocol detection peek timeout in seconds. Default: 5
+# peek_timeout_secs = 5
+
+# 连接/认证/attach 超时（秒）
+# Connect/auth/attach timeout in seconds. Default: 5
+# connect_timeout_secs = 5
+
+# 心跳间隔（秒）
+# Keep-alive interval in seconds. Default: 1
+# keep_alive_interval_secs = 1
+
+# 空闲超时（秒）
+# Idle timeout in seconds. Connection lost after consecutive missed heartbeats. Default: 5
+# idle_timeout_secs = 5
+
+# WebRTC 公网 IP（ICE host candidate）
+# Public IP for WebRTC ICE. Set when server is behind NAT.
+# Empty = auto-detect from local address.
+# Env: SAW_WEBRTC_PUBLIC_IP
+# webrtc_public_ip = ""
