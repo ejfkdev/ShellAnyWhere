@@ -244,18 +244,17 @@ impl SessionManager {
     /// Update session info (from agent SessionUpdate control).
     pub fn update_session(&self, info: &SessionInfo) {
         if let Some(mut session) = self.sessions.get_mut(&info.session_id) {
-            log::info!(
+            log::debug!(
                 "SessionUpdate: {} cwd={} title={}",
                 info.session_id,
                 info.cwd,
                 info.title
             );
             session.info = info.clone();
-            // Broadcast SessionUpdate to all connected clients
             let n = self.session_events_tx.send(Control::SessionUpdate {
                 session: info.clone(),
             });
-            log::info!("SessionUpdate broadcast: {} receivers", n.unwrap_or(0));
+            log::debug!("SessionUpdate broadcast: {} receivers", n.unwrap_or(0));
         } else {
             log::warn!("SessionUpdate for unknown session {}", info.session_id);
         }
@@ -267,14 +266,10 @@ impl SessionManager {
         if let Some(mut session) = self.sessions.get_mut(session_id) {
             session.info.title = title.to_string();
             let info = session.info.clone();
-            log::info!("ClientSetTitle: session {} title={:?}", session_id, title);
-            let n = self
+            log::debug!("ClientSetTitle: session {} title={:?}", session_id, title);
+            let _ = self
                 .session_events_tx
                 .send(Control::SessionUpdate { session: info });
-            log::info!(
-                "SessionUpdate broadcast (title): {} receivers",
-                n.unwrap_or(0)
-            );
         } else {
             log::warn!("ClientSetTitle for unknown session {}", session_id);
         }

@@ -14,7 +14,7 @@ use saw_core::util::logging;
 async fn main() {
     let cli = cli::LegacyCli::parse_or_connect();
 
-    logging::init_file_logging("client", true);
+    logging::init_file_logging_with_pid("client", true);
 
     let file_config = config::load_config_file().unwrap_or_default();
 
