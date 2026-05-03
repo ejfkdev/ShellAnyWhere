@@ -475,8 +475,8 @@ pub async fn run_kcp_listener_with_transport(
     shared_authorized_keys: SharedAuthorizedKeys,
 ) -> anyhow::Result<()> {
     let config = kcp_transport::low_latency_kcp_config();
-    let mut listener = kcp_transport::KcpListener::with_transport(std::sync::Arc::new(transport), config)
-        .await?;
+    let mut listener =
+        kcp_transport::KcpListener::with_transport(std::sync::Arc::new(transport), config).await?;
     log::info!("KCP listener started (shared port via UdpMux)");
     loop {
         match listener.accept().await {

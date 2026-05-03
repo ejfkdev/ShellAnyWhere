@@ -216,7 +216,10 @@ impl UdpMux {
 
     fn dispatch_kcp(&self, source: SocketAddr, packet: &[u8]) {
         if self.kcp_pkt_tx.send((source, packet.to_vec())).is_err() {
-            log::debug!("UdpMux: KCP channel closed, dropping packet from {}", source);
+            log::debug!(
+                "UdpMux: KCP channel closed, dropping packet from {}",
+                source
+            );
         }
     }
 }
@@ -234,26 +237,16 @@ pub struct MuxTransport {
 impl Transport for MuxTransport {
     type Addr = SocketAddr;
 
-    async fn send_to(
-        &self,
-        buf: &[u8],
-        target: &SocketAddr,
-    ) -> std::io::Result<usize> {
+    async fn send_to(&self, buf: &[u8], target: &SocketAddr) -> std::io::Result<usize> {
         self.socket.send_to(buf, target).await
     }
 
-    async fn recv_from(
-        &self,
-        buf: &mut [u8],
-    ) -> std::io::Result<(usize, SocketAddr)> {
+    async fn recv_from(&self, buf: &mut [u8]) -> std::io::Result<(usize, SocketAddr)> {
         // Read from the channel fed by UdpMux's dispatch loop
-        let (source, data) = self
-            .pkt_rx
-            .lock()
-            .await
-            .recv()
-            .await
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "KCP channel closed"))?;
+        let (source, data) =
+            self.pkt_rx.lock().await.recv().await.ok_or_else(|| {
+                std::io::Error::new(std::io::ErrorKind::Other, "KCP channel closed")
+            })?;
 
         let len = data.len().min(buf.len());
         buf[..len].copy_from_slice(&data[..len]);
