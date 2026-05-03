@@ -32,10 +32,10 @@ https://github.com/user-attachments/assets/197e9688-e472-439b-a551-760cf281519b
 
 ### 1. 安装 saw 服务端
 
-从 [Releases](https://github.com/ejfkdev/ShellAnyWhere/releases) 下载对应平台的最新版本，然后安装为后台服务：
+macOS 可通过 `brew install ejfkdev/tap/saw` 安装，其他平台从 [Releases](https://github.com/ejfkdev/ShellAnyWhere/releases) 下载。然后安装为后台服务：
 
 ```bash
-saw-server install          # 所有平台均无需 root/管理员权限
+saw-server install
 ```
 
 ### 2. 配置 Shell 代理

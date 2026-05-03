@@ -32,10 +32,10 @@ https://github.com/user-attachments/assets/197e9688-e472-439b-a551-760cf281519b
 
 ### 1. Install server
 
-Download the latest release for your platform from [Releases](https://github.com/ejfkdev/ShellAnyWhere/releases), then install as a background service:
+macOS: `brew install ejfkdev/tap/saw`, or download from [Releases](https://github.com/ejfkdev/ShellAnyWhere/releases) for other platforms. Then install as a background service:
 
 ```bash
-saw-server install          # All platforms: no root/admin needed
+saw-server install
 ```
 
 ### 2. Configure the shell agent

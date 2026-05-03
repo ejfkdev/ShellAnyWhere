@@ -268,9 +268,9 @@ pub fn inject_config(
     let new_content = if cleaned.is_empty() {
         format!("{}\n", script)
     } else if cleaned.ends_with('\n') {
-        format!("{}{}\n", cleaned, script)
+        format!("{}{}\n", script, cleaned)
     } else {
-        format!("{}\n{}\n", cleaned, script)
+        format!("{}\n{}\n", script, cleaned)
     };
 
     std::fs::write(&config_path, new_content)?;
@@ -555,7 +555,7 @@ mod tests {
     fn test_inject_and_remove_roundtrip() {
         let original = "export PATH=/usr/bin\n".to_string();
         let script = ShellType::Zsh.injection_script("saw-shell", None, None);
-        let injected = format!("{}{}\n", original, script);
+        let injected = format!("{}{}\n", script, original);
 
         let cleaned = remove_injection(&injected);
         assert_eq!(cleaned, original);

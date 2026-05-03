@@ -6,7 +6,7 @@
 
 use anyhow::{Context, Result};
 
-#[cfg_attr(not(any(target_os = "linux", target_os = "macos", target_os = "windows")), allow(dead_code))]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 const SERVICE_NAME: &str = "saw-server";
 const SERVICE_DISPLAY: &str = "ShellAnyWhere Server";
 #[cfg(target_os = "macos")]
@@ -396,6 +396,7 @@ async fn run_server_default() -> anyhow::Result<()> {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 fn run(cmd: &str, args: &[&str]) -> Result<()> {
     let status = std::process::Command::new(cmd)
         .args(args)
