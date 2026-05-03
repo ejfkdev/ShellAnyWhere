@@ -26,7 +26,7 @@ How it works: the agent replaces your login shell via RC config, intercepts the 
 
 ![screenshot](https://raw.githubusercontent.com/ejfkdev/ShellAnyWhere/refs/heads/main/docs/file/demo.jpg)
 
-https://github.com/user-attachments/assets/a8cea640-df81-4bbd-bcc5-cf9d4dac8ba0
+https://github.com/user-attachments/assets/197e9688-e472-439b-a551-760cf281519b
 
 ## Quick Start
 
