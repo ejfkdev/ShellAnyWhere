@@ -283,8 +283,10 @@ impl KcpAgentConnector {
             tokio::time::sleep(delay).await;
         }
 
-        // Parse server address: use KCP port (server_port + 1)
-        let kcp_addr = resolve_kcp_addr(&server)?;
+        // Parse server address: KCP shares the same port as the server
+        let kcp_addr: std::net::SocketAddr = server
+            .parse()
+            .map_err(|_| anyhow::anyhow!("Invalid server address: {}", server))?;
 
         log::info!("Connecting via KCP to {}", kcp_addr);
         let mut mux = tokio::time::timeout(connect_timeout, kcp_transport::connect_kcp(kcp_addr))
@@ -764,16 +766,6 @@ enum ActiveSource {
 }
 
 use crate::reconnect::random_duration;
-
-/// Parse server address and compute KCP port (TCP port + 1).
-fn resolve_kcp_addr(server: &str) -> anyhow::Result<std::net::SocketAddr> {
-    // server format: "host:port" or "[ipv6]:port"
-    let addr: std::net::SocketAddr = server
-        .parse()
-        .map_err(|_| anyhow::anyhow!("Invalid server address: {}", server))?;
-    let kcp_port = addr.port() + 1;
-    Ok(std::net::SocketAddr::new(addr.ip(), kcp_port))
-}
 
 fn encode_control(ctrl: &Control) -> anyhow::Result<Vec<u8>> {
     let data = bincode::serde::encode_to_vec(ctrl, bincode::config::standard())?;

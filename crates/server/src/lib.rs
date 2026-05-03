@@ -6,4 +6,5 @@ pub mod relay;
 pub mod session_mgr;
 pub mod ssh;
 pub mod transport;
+pub mod udp_mux;
 pub mod webrtc;

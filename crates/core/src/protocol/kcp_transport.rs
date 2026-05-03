@@ -8,7 +8,7 @@ use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::sync::mpsc;
 
-pub use kcp_tokio::{KcpConfig, KcpListener, KcpStream};
+pub use kcp_tokio::{KcpConfig, KcpListener, KcpStream, Transport, UdpTransport};
 
 /// Stream IDs for multiplexing over a single KCP connection.
 pub mod stream_id {
@@ -159,7 +159,7 @@ impl AsyncRead for KcpVirtualStream {
 /// Multiplexer for a single KCP connection.
 /// Reads frames from the underlying KCP stream and routes them to virtual streams.
 /// Writes from virtual streams are sent as frames on the KCP stream.
-pub struct KcpMultiplex {
+pub struct KcpMultiplex<T: Transport = UdpTransport> {
     /// Shared write channel: all virtual streams send frames here.
     write_rx: mpsc::Receiver<Vec<u8>>,
     /// Write channel producer (cloned for each virtual stream).
@@ -167,7 +167,7 @@ pub struct KcpMultiplex {
     /// Map of stream_id -> sender for delivering received data.
     streams: HashMap<u8, mpsc::Sender<Vec<u8>>>,
     /// The underlying KCP stream.
-    stream: KcpStream,
+    stream: KcpStream<T>,
     /// Read buffer for partial frame parsing. Uses cursor to avoid drain.
     read_buf: Vec<u8>,
     read_buf_offset: usize,
@@ -178,8 +178,8 @@ pub struct KcpMultiplex {
 /// Maximum number of frames to batch in a single KCP write.
 const MAX_BATCH_FRAMES: usize = 64;
 
-impl KcpMultiplex {
-    pub fn new(stream: KcpStream) -> Self {
+impl<T: Transport> KcpMultiplex<T> {
+    pub fn new(stream: KcpStream<T>) -> Self {
         let (write_tx, write_rx) = mpsc::channel::<Vec<u8>>(512);
         Self {
             write_rx,

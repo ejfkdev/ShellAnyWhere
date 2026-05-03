@@ -1,7 +1,7 @@
 //! WebRTC Data Channel support for browser clients.
 //!
 //! Uses str0m (sans-I/O WebRTC) with ICE Lite for direct connections.
-//! All WebRTC peers share a single UDP socket, routed by STUN ufrag.
+//! All WebRTC peers share a single UDP socket via UdpMux, routed by STUN ufrag.
 //! SDP signaling via `POST /api/webrtc/offer`.
 
 use std::net::SocketAddr;
@@ -19,126 +19,11 @@ use crate::session_mgr::SharedSessionManager;
 use crate::transport::{
     ControlTransport, WS_TYPE_CONTROL, WS_TYPE_TERM_INPUT, WebrtcControlTransport, WsMessage,
 };
+use crate::udp_mux::UdpMux;
 
 /// Initialize the WebRTC crypto provider. Must be called once at startup.
 pub fn init_crypto() {
     str0m::crypto::from_feature_flags().install_process_default();
-}
-
-// ── WebRtcMux: packet router for WebRTC peers ──────────────────────────────
-
-/// Routes WebRTC packets to the correct `Rtc` instance by:
-/// 1. Parsing STUN Binding Request USERNAME to extract the server ufrag
-/// 2. Falling back to source-address lookup for post-ICE DTLS/SCTP packets
-///
-/// Reads packets from the bound UDP socket in a background task and dispatches
-/// them to the appropriate Rtc event loop. Outbound packets are sent through
-/// the same socket.
-pub struct WebRtcMux {
-    socket: Arc<tokio::net::UdpSocket>,
-    listen_addr: SocketAddr,
-    /// server ufrag → channel to feed incoming packets into the Rtc event loop
-    routes: std::sync::Mutex<HashMap<String, PktSender>>,
-    /// peer source addr → server ufrag (established after first STUN exchange)
-    peer_map: std::sync::Mutex<HashMap<SocketAddr, String>>,
-}
-
-use std::collections::HashMap;
-
-/// Type alias for the channel that feeds incoming packets into an Rtc event loop.
-type PktSender = mpsc::UnboundedSender<(SocketAddr, Vec<u8>)>;
-
-impl WebRtcMux {
-    /// Create a new WebRtcMux using the given bound UDP socket.
-    ///
-    /// Spawns a background task that reads packets from the socket and
-    /// dispatches them to the correct Rtc instance.
-    pub fn new(socket: tokio::net::UdpSocket) -> Arc<Self> {
-        let listen_addr = socket.local_addr().expect("WebRTC UDP socket local_addr");
-        let socket = Arc::new(socket);
-        let mux = Arc::new(Self {
-            socket: socket.clone(),
-            listen_addr,
-            routes: std::sync::Mutex::new(HashMap::new()),
-            peer_map: std::sync::Mutex::new(HashMap::new()),
-        });
-
-        // Spawn the packet receive loop
-        let mux_clone = mux.clone();
-        tokio::spawn(async move {
-            let mut buf = [0u8; 65535];
-            loop {
-                match mux_clone.socket.recv_from(&mut buf).await {
-                    Ok((n, source)) => {
-                        mux_clone.dispatch_packet(source, &buf[..n]);
-                    }
-                    Err(e) => {
-                        log::warn!("WebRTC mux: UDP recv error: {}", e);
-                        break;
-                    }
-                }
-            }
-        });
-
-        log::info!("WebRTC mux ready on UDP {}", listen_addr);
-        mux
-    }
-
-    /// The local address the UDP socket is bound to.
-    pub fn listen_addr(&self) -> SocketAddr {
-        self.listen_addr
-    }
-
-    /// Send a UDP packet through the socket.
-    pub async fn send_to(&self, data: &[u8], dest: SocketAddr) -> std::io::Result<()> {
-        self.socket.send_to(data, dest).await?;
-        Ok(())
-    }
-
-    /// Register a new Rtc instance to receive packets for the given server ufrag.
-    /// Returns the receiver that the Rtc event loop should use for incoming packets.
-    pub fn register(&self, ufrag: &str) -> mpsc::UnboundedReceiver<(SocketAddr, Vec<u8>)> {
-        let (tx, rx) = mpsc::unbounded_channel();
-        self.routes.lock().unwrap().insert(ufrag.to_string(), tx);
-        log::debug!("WebRTC mux: registered ufrag={}", ufrag);
-        rx
-    }
-
-    /// Unregister a peer (on disconnect).
-    pub fn unregister(&self, ufrag: &str) {
-        self.routes.lock().unwrap().remove(ufrag);
-        // Also remove peer_map entries pointing to this ufrag
-        let mut pm = self.peer_map.lock().unwrap();
-        pm.retain(|_, v| v != ufrag);
-        log::debug!("WebRTC mux: unregistered ufrag={}", ufrag);
-    }
-
-    /// Map a peer's source address to its server ufrag (after ICE completes).
-    pub fn register_peer(&self, peer_addr: SocketAddr, ufrag: &str) {
-        self.peer_map
-            .lock()
-            .unwrap()
-            .insert(peer_addr, ufrag.to_string());
-    }
-
-    /// Route a received packet to the correct Rtc event loop.
-    fn dispatch_packet(&self, source: SocketAddr, packet: &[u8]) {
-        let ufrag = extract_stun_ufrag(packet)
-            .or_else(|| self.peer_map.lock().unwrap().get(&source).cloned());
-
-        match ufrag {
-            Some(ufrag) => {
-                if let Some(tx) = self.routes.lock().unwrap().get(&ufrag) {
-                    let _ = tx.send((source, packet.to_vec()));
-                } else {
-                    log::debug!("WebRTC mux: no route for ufrag={}", ufrag);
-                }
-            }
-            None => {
-                log::debug!("WebRTC mux: cannot route packet from {}", source);
-            }
-        }
-    }
 }
 
 /// Extract the ICE ufrag from an SDP answer string.
@@ -152,69 +37,14 @@ fn extract_ufrag_from_sdp(sdp: &str) -> Option<String> {
     None
 }
 
-/// Try to extract the server (remote) ufrag from a STUN Binding Request.
-///
-/// STUN Binding Request USERNAME attribute format: `remote_ufrag:local_ufrag`
-/// where "remote" is the server's ufrag (the one we need for routing).
-///
-/// Returns `None` if the packet is not a STUN Binding Request or has no USERNAME.
-fn extract_stun_ufrag(packet: &[u8]) -> Option<String> {
-    // STUN header: first 2 bits must be 00, method = Binding (0x0001)
-    if packet.len() < 20 {
-        return None;
-    }
-    let msg_type = u16::from_be_bytes([packet[0], packet[1]]);
-    // First 2 bits must be 00 (STUN, not channel data or DTLS)
-    if msg_type & 0xC000 != 0 {
-        return None;
-    }
-    // STUN magic cookie at offset 4
-    if u32::from_be_bytes([packet[4], packet[5], packet[6], packet[7]]) != 0x2112A442 {
-        return None;
-    }
-
-    let msg_len = u16::from_be_bytes([packet[2], packet[3]]) as usize;
-    if packet.len() < 20 + msg_len {
-        return None;
-    }
-
-    // Parse STUN attributes
-    let mut offset = 20;
-    while offset + 4 <= 20 + msg_len {
-        let attr_type = u16::from_be_bytes([packet[offset], packet[offset + 1]]);
-        let attr_len = u16::from_be_bytes([packet[offset + 2], packet[offset + 3]]) as usize;
-        let attr_start = offset + 4;
-        let attr_end = attr_start + attr_len;
-        if attr_end > packet.len() {
-            break;
-        }
-
-        if attr_type == 0x0006 {
-            // USERNAME attribute
-            if let Ok(username) = std::str::from_utf8(&packet[attr_start..attr_end]) {
-                // Format: "remote_ufrag:local_ufrag"
-                if let Some(remote) = username.split(':').next() {
-                    return Some(remote.to_string());
-                }
-            }
-        }
-
-        // Attributes are padded to 4-byte boundary
-        let padded = (attr_len + 3) & !3;
-        offset = attr_start + padded;
-    }
-
-    None
-}
-
 // ── Handle offer ────────────────────────────────────────────────────────────
 
 /// Handle a WebRTC SDP offer and return the SDP answer.
-/// Uses the shared UDP mux instead of creating a per-connection socket.
+/// Uses the shared UdpMux for packet routing.
 pub async fn handle_offer(
     offer_sdp: &str,
     public_ip: Option<std::net::IpAddr>,
-    mux: &Arc<WebRtcMux>,
+    mux: &Arc<UdpMux>,
     session_mgr: SharedSessionManager,
     auth_key: Option<AuthKey>,
 ) -> Result<String> {
@@ -268,11 +98,11 @@ pub async fn handle_offer(
 
 /// Run the str0m poll loop for a single WebRTC peer.
 ///
-/// Receives packets from the WebRtcMux via `pkt_rx` channel instead of
+/// Receives packets from the UdpMux via `pkt_rx` channel instead of
 /// reading from a per-connection UDP socket. Sends via `mux.send_to()`.
 async fn run_rtc_event_loop(
     mut rtc: str0m::Rtc,
-    mux: Arc<WebRtcMux>,
+    mux: Arc<UdpMux>,
     candidate_addr: SocketAddr,
     ufrag: String,
     mut pkt_rx: mpsc::UnboundedReceiver<(SocketAddr, Vec<u8>)>,

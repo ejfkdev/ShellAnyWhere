@@ -229,7 +229,7 @@ pub async fn run_server(config: ServerConfig) -> anyhow::Result<()> {
     // Initialize WebRTC crypto provider once at startup
     crate::webrtc::init_crypto();
 
-    // ── WebRTC UDP socket ──
+    // ── Unified UDP socket (WebRTC + KCP on the same port) ──
     // Parse listen_addr to determine the UDP port (same as TCP)
     let udp_port = config
         .listen_addr
@@ -238,9 +238,9 @@ pub async fn run_server(config: ServerConfig) -> anyhow::Result<()> {
         .and_then(|p| p.parse::<u16>().ok())
         .unwrap_or(18708);
     // Use [::] for dual-stack (IPv4+IPv6) support
-    let webrtc_udp_addr: std::net::SocketAddr = format!("[::]:{}", udp_port).parse().unwrap();
-    let webrtc_udp = tokio::net::UdpSocket::bind(webrtc_udp_addr).await?;
-    log::info!("WebRTC UDP socket bound on {}", webrtc_udp.local_addr()?);
+    let udp_addr: std::net::SocketAddr = format!("[::]:{}", udp_port).parse().unwrap();
+    let udp_socket = tokio::net::UdpSocket::bind(udp_addr).await?;
+    log::info!("UDP socket bound on {}", udp_socket.local_addr()?);
 
     // Resolve WebRTC public IP (None = auto-detect from local address)
     let webrtc_public_ip: Option<std::net::IpAddr> = if !config.webrtc_public_ip.is_empty() {
@@ -255,29 +255,28 @@ pub async fn run_server(config: ServerConfig) -> anyhow::Result<()> {
             .unwrap_or_else(|| "auto-detect".to_string())
     );
 
-    // Create WebRtcMux (binds its own UDP socket for WebRTC traffic)
-    let webrtc_mux = crate::webrtc::WebRtcMux::new(webrtc_udp);
+    // Create UdpMux (unified WebRTC + KCP packet routing on one socket)
+    let udp_mux = crate::udp_mux::UdpMux::new(udp_socket);
 
     let app_state = Arc::new(crate::http::AppState {
         auth_key: auth_key.clone(),
         session_mgr: session_mgr.clone(),
         shared_authorized_keys: shared_authorized_keys.clone(),
         webrtc_public_ip,
-        webrtc_mux,
+        udp_mux: udp_mux.clone(),
         web_dir: config.web_dir,
     });
 
-    // ── KCP listener (low-latency UDP transport for native clients) ──
+    // ── KCP listener (low-latency UDP transport, shares port with WebRTC via UdpMux) ──
     #[cfg(feature = "kcp")]
     {
-        let kcp_port = udp_port + 1; // KCP on port+1 (e.g., 18709)
-        let kcp_addr: std::net::SocketAddr = format!("[::]:{}", kcp_port).parse().unwrap();
+        let kcp_transport = udp_mux.create_kcp_transport();
         let kcp_session_mgr = session_mgr.clone();
         let kcp_auth_key = auth_key.clone();
         let kcp_authorized_keys = shared_authorized_keys.clone();
         tokio::spawn(async move {
-            if let Err(e) = crate::kcp::run_kcp_listener(
-                kcp_addr,
+            if let Err(e) = crate::kcp::run_kcp_listener_with_transport(
+                kcp_transport,
                 kcp_session_mgr,
                 kcp_auth_key,
                 kcp_authorized_keys,

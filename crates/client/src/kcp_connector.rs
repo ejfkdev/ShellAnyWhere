@@ -24,7 +24,9 @@ pub struct KcpClientConnector {
 impl KcpClientConnector {
     /// Connect to a KCP server and authenticate as client.
     pub async fn connect(addr: &str, token: String) -> Result<Self> {
-        let kcp_addr = resolve_kcp_addr(addr)?;
+        let kcp_addr: std::net::SocketAddr = addr
+            .parse()
+            .map_err(|_| anyhow::anyhow!("Invalid server address: {}", addr))?;
         log::info!("Connecting via KCP to {}", kcp_addr);
 
         let mut mux = kcp_transport::connect_kcp(kcp_addr).await?;
@@ -135,14 +137,6 @@ impl KcpClientConnector {
             client_id,
         })
     }
-}
-
-fn resolve_kcp_addr(server: &str) -> anyhow::Result<std::net::SocketAddr> {
-    let addr: std::net::SocketAddr = server
-        .parse()
-        .map_err(|_| anyhow::anyhow!("Invalid server address: {}", server))?;
-    let kcp_port = addr.port() + 1;
-    Ok(std::net::SocketAddr::new(addr.ip(), kcp_port))
 }
 
 /// Encode a Control message with length prefix: [4-byte BE len][bincode data]
