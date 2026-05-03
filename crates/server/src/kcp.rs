@@ -83,8 +83,8 @@ impl ControlTransport for KcpControlTransport {
 // ── KCP connection handling ────────────────────────────────────────────────
 
 /// Handle a new KCP connection.
-pub async fn handle_kcp_connection(
-    mut mux: kcp_transport::KcpMultiplex,
+pub async fn handle_kcp_connection<T: kcp_transport::Transport + Send + 'static>(
+    mut mux: kcp_transport::KcpMultiplex<T>,
     session_mgr: SharedSessionManager,
     auth_key: Option<AuthKey>,
     shared_authorized_keys: SharedAuthorizedKeys,
@@ -467,15 +467,17 @@ async fn kcp_client_term_relay(
     log::debug!("KCP client {} term relay ended", client_id);
 }
 
-/// Start the KCP listener.
-pub async fn run_kcp_listener(
-    addr: std::net::SocketAddr,
+/// Start the KCP listener using a custom transport (e.g., from UdpMux for port sharing).
+pub async fn run_kcp_listener_with_transport(
+    transport: crate::udp_mux::MuxTransport,
     session_mgr: SharedSessionManager,
     auth_key: Option<AuthKey>,
     shared_authorized_keys: SharedAuthorizedKeys,
 ) -> anyhow::Result<()> {
-    let mut listener = kcp_transport::listen_kcp(addr).await?;
-    log::info!("KCP listener started on {}", addr);
+    let config = kcp_transport::low_latency_kcp_config();
+    let mut listener = kcp_transport::KcpListener::with_transport(std::sync::Arc::new(transport), config)
+        .await?;
+    log::info!("KCP listener started (shared port via UdpMux)");
     loop {
         match listener.accept().await {
             Ok((stream, peer_addr)) => {

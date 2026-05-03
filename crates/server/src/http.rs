@@ -29,7 +29,7 @@ pub struct AppState {
     pub session_mgr: SharedSessionManager,
     pub shared_authorized_keys: crate::ssh::SharedAuthorizedKeys,
     pub webrtc_public_ip: Option<std::net::IpAddr>,
-    pub webrtc_mux: std::sync::Arc<crate::webrtc::WebRtcMux>,
+    pub udp_mux: std::sync::Arc<crate::udp_mux::UdpMux>,
     /// When set, serve web frontend from this directory instead of embedded assets.
     pub web_dir: Option<std::path::PathBuf>,
 }
@@ -456,7 +456,7 @@ async fn handle_webrtc_offer(
     match crate::webrtc::handle_offer(
         offer_sdp,
         candidate_ip,
-        &app_state.webrtc_mux,
+        &app_state.udp_mux,
         app_state.session_mgr.clone(),
         app_state.auth_key.clone(),
     )
