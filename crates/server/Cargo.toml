@@ -20,7 +20,6 @@ saw-core = { path = "../core", features = ["server", "native-certs", "compress"]
 mimalloc = { workspace = true }
 tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "net", "time", "sync", "io-util", "signal"] }
 log = "0.4"
-env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
 anyhow = { workspace = true }
 bytes = { workspace = true }
 clap = { workspace = true }

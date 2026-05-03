@@ -31,7 +31,7 @@ async fn main() {
         _ => {}
     }
 
-    logging::init_file_logging("agent", false);
+    logging::init_file_logging_with_pid("agent", false);
 
     let file_config = config::load_config_file().unwrap_or_default();
 
